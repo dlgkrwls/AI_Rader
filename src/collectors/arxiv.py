@@ -48,8 +48,8 @@ class ArxivCollector(BaseCollector):
                     "source": self.source,
                     "source_type": "paper",
                     "external_id": match.group(1) if match else entry.id,
-                    # arXiv wraps titles and abstracts at ~80 chars, so both
-                    # arrive full of newlines and runs of spaces.
+                    # Some abstracts arrive with the author's own line breaks
+                    # (8 of 334 in the first run); titles so far never do.
                     "title": _squash(entry.title),
                     "summary": _squash(entry.summary),
                     "url": entry.link,

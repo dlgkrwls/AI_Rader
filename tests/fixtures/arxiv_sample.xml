@@ -1,0 +1,56 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:arxiv="http://arxiv.org/schemas/atom" xmlns="http://www.w3.org/2005/Atom">
+  <id>https://arxiv.org/api/WFquG1CEVlfg5AL6NF3pd5hfYDo</id>
+  <title>arXiv Query: search_query=cat:cs.CV&amp;id_list=&amp;start=0&amp;max_results=2</title>
+  <updated>2026-09-09T03:55:36Z</updated>
+  <link href="https://arxiv.org/api/query?search_query=cat:cs.CV&amp;start=0&amp;max_results=2&amp;id_list=" type="application/atom+xml"/>
+  <opensearch:itemsPerPage>2</opensearch:itemsPerPage>
+  <opensearch:totalResults>204834</opensearch:totalResults>
+  <opensearch:startIndex>0</opensearch:startIndex>
+  <entry>
+    <id>http://arxiv.org/abs/2609.09082v1</id>
+    <title>GoDeep: Annotation-Free Open-Vocabulary 3D Scene Understanding via Language-Space Lifting</title>
+    <updated>2026-09-08T17:31:51Z</updated>
+    <link href="https://arxiv.org/abs/2609.09082v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.09082v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Open vocabulary 3D semantic segmentation methods typically lift CLIP features into 3D. This embeds points in a joint vision-language space known to behave like a bag-of-words on compositional tasks. Furthermore, even annotation free variants often require a large 3D training corpus and a dedicated 3D encoder per domain. Instead we use a vision-language model purely as a translator. It produces structured, entity-level descriptions of each posed image. These descriptions are grounded, projected, and aggregated directly in a general-purpose, language-only embedding space, with no 3D training corpus or encoder required. On ScanNet++, our pipeline is competitive with strong annotation free baselines trained on ScanNet. On a 5-building cultural heritage benchmark, raw scores initially favor a CLIP-based variant, but a single systematic vocabulary correction reverses this ranking. An effect confirmed by a second, independent correction on a different class, indicating that language-space embeddings track physical content more faithfully. This fidelity extends to genuinely out-of-vocabulary (OOV) objects on ScanNet++ proving that language-space embeddings separate presence from absence objects far more sharply than CLIP-based embeddings do. GoDeep also localize these OOV objects within the scene, all without any 2D-3D annotation. Because every representation remains discrete text, predictions are also explainable at the point level. Finally, exploiting both a heuristic weighting, that favors precise over merely frequent observations and GoDeep's explainability property, we propose an aggregation strategy, as a proof of concept, that favors finer elements localization.</summary>
+    <category term="cs.CV" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-08T17:31:51Z</published>
+    <arxiv:primary_category term="cs.CV"/>
+    <author>
+      <name>Thodoris Betsas</name>
+    </author>
+    <author>
+      <name>Anastasios Doulamis</name>
+    </author>
+    <author>
+      <name>Andreas Georgopoulos</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2609.09069v1</id>
+    <title>Rethinking Learned Occupancy in Autonomous Active Mapping with Observation-Gated Filtering</title>
+    <updated>2026-09-08T17:23:37Z</updated>
+    <link href="https://arxiv.org/abs/2609.09069v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2609.09069v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Autonomous 3D active mapping requires a space robot to choose where to sense while building the geometry needed for navigation. Learned occupancy completion extends spatial context beyond the current field of view, but one predicted map often serves two planning roles: it scores expected surface gain and constrains collision-free motion. Unsupported occupancy can therefore distort both where the robot looks and where it believes it can travel. We study this coupled interface in a controlled closed-loop benchmark by holding the active-mapping system fixed and varying only its planner-facing occupancy across observation-only, learned, oracle-corrected, and ground-truth conditions. Improving occupancy accuracy does not monotonically improve closed-loop coverage: across 25 starts, planning with ground-truth occupancy reaches 70% of the learned baseline's final coverage 12.7 steps earlier on average, while increasing final coverage by only 0.031. Guided by this diagnosis, we introduce an observation-gated filter that retains completion in insufficiently observed regions and suppresses predictions only after repeated frustum exposure without nearby RGB-D support. The filter improves both targeted failure-prone starts without retraining or ground truth. These results motivate online revision of planner-facing geometry during autonomous intervals between communication windows. The current study assumes benchmark RGB-D observations and sufficiently accurate pose estimates; planetary sensing conditions and accumulated localization drift remain to be evaluated.</summary>
+    <category term="cs.RO" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.CV" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-08T17:23:37Z</published>
+    <arxiv:comment>Accepted to IROS 2026 Space Robotics Workshop (oral)</arxiv:comment>
+    <arxiv:primary_category term="cs.RO"/>
+    <author>
+      <name>Jiahui Zhang</name>
+    </author>
+    <author>
+      <name>Bonian Han</name>
+    </author>
+    <author>
+      <name>Gongbo Liang</name>
+    </author>
+    <author>
+      <name>Yu Zhang</name>
+    </author>
+  </entry>
+</feed>
