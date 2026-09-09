@@ -1,0 +1,53 @@
+# 수집 소스 정의
+# 소스 추가는 이 파일만 수정한다. 코드 변경 불필요.
+
+arxiv:
+  enabled: true
+  categories:
+    - cs.CV      # Computer Vision
+    - cs.LG      # Machine Learning
+    - cs.RO      # Robotics
+    - cs.AI      # Artificial Intelligence
+  max_results: 100
+  request_delay_sec: 3    # arXiv 권장. 어기면 차단됨
+
+github:
+  enabled: true
+  queries:
+    - "vision language model"
+    - "onnx tensorrt inference"
+    - "bev perception"
+    - "model quantization"
+    - "edge ai deployment"
+  min_stars: 10
+  max_results_per_query: 30
+
+huggingface:
+  enabled: true
+  tasks:
+    - image-classification
+    - object-detection
+    - image-segmentation
+    - depth-estimation
+    - image-text-to-text
+  sort: lastModified
+  max_results_per_task: 20
+
+blog:
+  enabled: true
+  # L4 산업 레이어. 논문화되지 않는 변화를 잡는다.
+  # RSS URL은 변경될 수 있으므로 실패 시 로그 확인 후 갱신할 것.
+  feeds:
+    - name: OpenAI
+      url: https://openai.com/news/rss.xml
+    - name: Anthropic
+      url: https://www.anthropic.com/news/rss.xml
+    - name: Google Research
+      url: https://research.google/blog/rss/
+    - name: NVIDIA Developer
+      url: https://developer.nvidia.com/blog/feed/
+    - name: Meta AI
+      url: https://ai.meta.com/blog/rss/
+    - name: Microsoft Research
+      url: https://www.microsoft.com/en-us/research/feed/
+  summary_max_chars: 2000   # 원본 전체는 raw_json에 보존

@@ -1,0 +1,34 @@
+# 개인 관심 프로필
+# Phase 1에서는 참조하지 않는다. Phase 2 relevance scoring의 입력.
+# 지금 만들어두는 이유: 관심사가 코드에 흩어지지 않게 한 곳에 모아두기 위해.
+
+interests:
+  core:              # 가중치 높음
+    - computer vision
+    - edge ai
+    - vision foundation model
+    - onnx
+    - tensorrt
+    - quantization
+    - model optimization
+  secondary:
+    - adas
+    - autonomous driving
+    - bev perception
+    - 3d vision
+    - robotics
+    - multimodal
+    - vision language model
+  tooling:
+    - c++ inference
+    - rag
+    - llm agent
+
+# Phase 2에서 튜닝할 랭킹 가중치. 초기값은 heuristic.
+# 200건 라벨링 후 nDCG@10 기준으로 조정한다.
+ranking_weights:
+  relevance:  0.40
+  novelty:    0.15
+  trend:      0.20
+  popularity: 0.15
+  recency:    0.10
