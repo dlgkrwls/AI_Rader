@@ -14,11 +14,6 @@ logger = logging.getLogger(__name__)
 
 SEARCH_URL = "https://api.github.com/search/repositories"
 
-INSERT_METRIC = """
-    INSERT INTO item_metrics (item_id, metric, value, recorded_at)
-    VALUES (?, ?, ?, ?)
-"""
-
 
 def _token() -> str:
     """Read GITHUB_TOKEN at request time.
@@ -79,7 +74,8 @@ class GithubCollector(BaseCollector):
                     "published_at": repo["created_at"],
                     "collected_at": collected_at,
                     "raw_json": json.dumps(repo, ensure_ascii=False),
-                    # Changing numbers never go in items - see save() below.
+                    # Changing numbers never go in items; BaseCollector.save()
+                    # appends these to item_metrics.
                     "metrics": {
                         "stars": repo["stargazers_count"],
                         "forks": repo["forks_count"],
@@ -87,36 +83,6 @@ class GithubCollector(BaseCollector):
                 }
             )
         return items
-
-    def save(self, conn, items: list[dict]) -> int:
-        """Insert new repos, then append today's stars/forks for all of them."""
-        new = super().save(conn, items)
-        self._save_metrics(conn, items)
-        return new
-
-    def _save_metrics(self, conn, items: list[dict]) -> None:
-        # INSERT OR IGNORE gives back no row id for repos we already had, so the
-        # ids are looked up by external_id instead.
-        item_ids = self._item_ids(conn, [item["external_id"] for item in items])
-        recorded_at = datetime.now(timezone.utc).isoformat()
-        conn.executemany(
-            INSERT_METRIC,
-            [
-                (item_ids[item["external_id"]], metric, value, recorded_at)
-                for item in items
-                for metric, value in item["metrics"].items()
-            ],
-        )
-        conn.commit()
-
-    def _item_ids(self, conn, external_ids: list[str]) -> dict:
-        placeholders = ",".join("?" * len(external_ids))
-        rows = conn.execute(
-            f"SELECT external_id, id FROM items "
-            f"WHERE source = ? AND external_id IN ({placeholders})",
-            (self.source, *external_ids),
-        )
-        return {row["external_id"]: row["id"] for row in rows}
 
 
 if __name__ == "__main__":

@@ -1,0 +1,47 @@
+[
+  {
+    "_id": "6aa0cf0ab98991540c506ff1",
+    "id": "WaveMatrix/YOLO11",
+    "lastModified": "2026-09-09T03:14:18.000Z",
+    "likes": 0,
+    "private": false,
+    "downloads": 0,
+    "tags": [
+      "onnx",
+      "Ultralytics",
+      "YOLO11",
+      "object-detection",
+      "en",
+      "base_model:Ultralytics/YOLO11",
+      "base_model:quantized:Ultralytics/YOLO11",
+      "license:mit",
+      "region:us"
+    ],
+    "pipeline_tag": "object-detection",
+    "createdAt": "2026-09-09T03:14:18.000Z",
+    "modelId": "WaveMatrix/YOLO11"
+  },
+  {
+    "_id": "6aa0c7155f930ef6180f69cb",
+    "id": "HashNuke/pp-doclayout-v3-mlx",
+    "lastModified": "2026-09-09T02:40:39.000Z",
+    "likes": 0,
+    "private": false,
+    "downloads": 0,
+    "tags": [
+      "mlx-vlm",
+      "safetensors",
+      "pp_doclayout_v3",
+      "mlx",
+      "object-detection",
+      "document-layout",
+      "en",
+      "zh",
+      "region:us"
+    ],
+    "pipeline_tag": "object-detection",
+    "library_name": "mlx-vlm",
+    "createdAt": "2026-09-09T02:40:21.000Z",
+    "modelId": "HashNuke/pp-doclayout-v3-mlx"
+  }
+]

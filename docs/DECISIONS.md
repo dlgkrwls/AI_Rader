@@ -205,7 +205,8 @@
 
 ## T4 — GitHub 수집기 (2026-09-09)
 
-**예측** — 미작성
+**예측**
+- github에서도 정보를 가져온다. 매일 바뀌는 stars랑 forks를 append로 기록한다
 
 **실제로 이렇게 됐다**
 - `src/collectors/github.py` — Search API로 저장소 수집. `parse()`가 item dict에
@@ -250,3 +251,53 @@
 - 관찰: 두 쿼리에 동시에 걸리는 저장소는 **한 실행에서 metric 샘플이 2번** 쌓인다
   (150건 중 4쌍이 그랬다). 버그는 아니지만 Phase 3에서 기울기를 계산할 때
   "하루 1샘플"을 가정하면 안 된다는 뜻이다. 날짜별 집계 시 평균이나 최신값을 쓸 것.
+
+---
+
+## T5 — Hugging Face 수집기 (2026-09-09)
+
+**예측**
+- HuggingFace도 BaseCollector를 상속해서 구현체를 만든다
+- 구조는 GitHub과 거의 같을 것: items 저장 → item_id 되찾기 → item_metrics
+- downloads, likes가 metrics로 들어간다
+- units()는 sources.yaml의 tasks 5개
+- T4에서 save()를 이미 고쳤으니 base는 안 건드릴 것 같다
+- 모르겠는 것: HF는 인증이 필요한가? GitHub처럼 rate limit이 있나?
+
+**실제로 이렇게 됐다**
+- `src/collectors/huggingface.py` — `units()` / `fetch()` / `parse()` **3개만** 구현.
+  70줄이고 `save()`는 아예 없다.
+- 검증: 1회차 `fetched=100 new=100`, 2회차 `fetched=100 **new=0**`,
+  `item_metrics`에 downloads/likes 각 200행(모델 100개 × 2회). 테스트 20개 통과.
+- 현재 DB: arxiv 334 / github 148 / huggingface 100 = **582건**.
+
+**예측과 달랐던 점 / 배운 것**
+- **예측 하나가 빗나갔다: "T4에서 save()를 이미 고쳤으니 base는 안 건드릴 것 같다."**
+  실제로는 **base를 또 고쳤다.** T4에서는 metrics 저장 로직이 `github.py` 안에 있었는데,
+  HF도 똑같이 필요해지면서 **같은 코드를 두 번째로 쓰게 되는 순간**이 왔다.
+  그래서 `_save_metrics()` / `_item_ids()`를 base로 올렸다.
+  → `github.py` 125줄 → 90줄, `huggingface.py`는 `save()`를 안 써서 70줄.
+  이게 프로젝트 규칙 "**구현체를 2개 만든 뒤에 공통점을 추출한다**"가 실제로 발동한
+  지점이다. T3에서 미룬 판단이 여기서 근거를 갖고 해결됐다.
+  T4 시점에 미리 뽑았다면 HF의 metrics 이름이 stars/forks가 아니라
+  downloads/likes라는 걸 모른 채 추상화했을 것이다.
+- base의 `save()`는 이제 `item.get("metrics", {})`로 처리한다. arXiv는 metrics가
+  없으므로 그냥 빠져나간다 — 분기를 넣은 게 아니라 **없으면 없는 대로 동작**한다.
+- **"HF는 인증이 필요한가?"** → 공개 모델 목록은 **토큰 없이 된다.** GitHub과 달리
+  `Authorization` 헤더가 없어도 200이 온다. 그래서 `.env` 의존성이 없다.
+- **list 엔드포인트에는 description이 없다.** 모델 카드는 모델당 별도 요청이라
+  100건이면 요청이 100번 더 든다. `summary`는 **NULL로 비워 뒀다.**
+  없는 걸 tags로 지어내는 것보다 비어 있는 편이 낫다. Phase 2에서 임베딩 입력이
+  부족하면 그때 모델 카드를 가져온다.
+- 관찰: `sort=lastModified`는 **몇 분 전에 올라온 모델**을 준다. downloads 0, likes 0이
+  대부분이라 "관심도" 신호로는 약하다. 지금은 `sources.yaml` 설정을 그대로 따랐고,
+  정렬 기준 변경은 Phase 2 랭킹의 문제로 남긴다.
+
+**면접에서 이렇게 설명한다**
+- **3개 수집기가 같은 인터페이스로 동작한다** — 각 수집기가 구현하는 건
+  "무엇을 순회하고(`units`), 어떻게 가져오고(`fetch`), 어떻게 우리 스키마로
+  바꾸는가(`parse`)" 뿐이다. 순회 · 지연 · 예외 격리 · 실행 기록 · items 저장 ·
+  metrics append는 전부 base에 한 번만 있다.
+- **추상화를 세 번에 걸쳐 만들었다** — T3에서 실행 골격만, T4에서 여분 키 필터링,
+  T5에서 metrics 저장. 매번 **구현체가 실제로 요구할 때** 올렸고, 미리 설계하지
+  않았다. 그래서 쓰이지 않는 확장 지점이 하나도 없다.

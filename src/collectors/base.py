@@ -14,6 +14,11 @@ ITEM_COLUMNS = (
     "authors", "tags", "published_at", "collected_at", "raw_json",
 )
 
+INSERT_METRIC = """
+    INSERT INTO item_metrics (item_id, metric, value, recorded_at)
+    VALUES (?, ?, ?, ?)
+"""
+
 INSERT_ITEM = """
     INSERT OR IGNORE INTO items
         (source, source_type, external_id, title, summary, url,
@@ -49,14 +54,46 @@ class BaseCollector:
         raise NotImplementedError
 
     def save(self, conn, items: list[dict]) -> int:
-        """Insert items, skipping ones already stored. Returns the new row count."""
+        """Insert new items, then append whatever metrics they carry.
+
+        items is idempotent, item_metrics is not: a repo we already know about
+        adds no row here but still records today's stars.
+        """
         before = conn.total_changes
-        # Only the item columns: collectors may hang extra keys (metrics) off a
-        # row for their own save() to pick up afterwards.
         rows = [{c: item[c] for c in ITEM_COLUMNS} for item in items]
         conn.executemany(INSERT_ITEM, rows)
+        new = conn.total_changes - before
+        self._save_metrics(conn, items)
         conn.commit()
-        return conn.total_changes - before
+        return new
+
+    def _save_metrics(self, conn, items: list[dict]) -> None:
+        """Append one row per metric. Sources that track none fall straight out."""
+        pairs = [
+            (item["external_id"], metric, value)
+            for item in items
+            for metric, value in item.get("metrics", {}).items()
+        ]
+        if not pairs:
+            return
+        # INSERT OR IGNORE hands back no row id for items already stored, so the
+        # ids have to be looked up by external_id.
+        item_ids = self._item_ids(conn, {external_id for external_id, _, _ in pairs})
+        recorded_at = _now()
+        conn.executemany(
+            INSERT_METRIC,
+            [(item_ids[e], metric, value, recorded_at) for e, metric, value in pairs],
+        )
+
+    def _item_ids(self, conn, external_ids) -> dict:
+        external_ids = list(external_ids)
+        placeholders = ",".join("?" * len(external_ids))
+        rows = conn.execute(
+            f"SELECT external_id, id FROM items "
+            f"WHERE source = ? AND external_id IN ({placeholders})",
+            (self.source, *external_ids),
+        )
+        return {row["external_id"]: row["id"] for row in rows}
 
     def run(self) -> tuple[int, int]:
         """Collect every unit and record the outcome. Returns (fetched, new)."""

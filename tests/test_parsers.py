@@ -7,6 +7,7 @@ from pathlib import Path
 from src.collectors.arxiv import ArxivCollector, _squash
 from src.collectors.base import ITEM_COLUMNS
 from src.collectors.github import GithubCollector
+from src.collectors.huggingface import HuggingFaceCollector
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -76,6 +77,33 @@ class GithubParseTest(unittest.TestCase):
     def test_raw_json_round_trips(self):
         raw = json.loads(self.items[0]["raw_json"])
         self.assertEqual(raw["full_name"], "m87-labs/moondream")
+
+
+class HuggingFaceParseTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        raw = json.loads((FIXTURES / "huggingface_sample.json").read_text(encoding="utf-8"))
+        cls.items = HuggingFaceCollector().parse(raw)
+
+    def test_parses_every_model(self):
+        self.assertEqual(len(self.items), 2)
+
+    def test_carries_item_columns_plus_metrics(self):
+        for item in self.items:
+            self.assertEqual(set(item), set(ITEM_COLUMNS) | {"metrics"})
+
+    def test_external_id_is_the_model_path(self):
+        self.assertEqual(self.items[0]["external_id"], "WaveMatrix/YOLO11")
+
+    def test_owner_becomes_the_author(self):
+        self.assertEqual(json.loads(self.items[0]["authors"]), ["WaveMatrix"])
+
+    def test_metrics_hold_downloads_and_likes(self):
+        self.assertEqual(set(self.items[0]["metrics"]), {"downloads", "likes"})
+
+    def test_summary_is_empty_because_the_list_endpoint_has_none(self):
+        for item in self.items:
+            self.assertIsNone(item["summary"])
 
 
 class SquashTest(unittest.TestCase):
