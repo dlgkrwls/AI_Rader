@@ -200,3 +200,44 @@
   순수 함수라 고정 fixture로 검증할 수 있다. 실제로 깨지는 사고는 API 응답 형식
   변경이고, 네트워크를 타는 테스트는 느리고 불안정해서 그 사고를 못 잡는다.
   fixture 테스트는 0.02초에 8개가 돈다.
+
+---
+
+## T4 — GitHub 수집기 (2026-09-09)
+
+**예측** — 미작성
+
+**실제로 이렇게 됐다**
+- `src/collectors/github.py` — Search API로 저장소 수집. `parse()`가 item dict에
+  `metrics` 키를 하나 더 실어 보내고, `save()`가 `super().save()`로 items를 넣은 뒤
+  `item_metrics`에 append한다.
+- `src/collectors/base.py` — T3에서 예고한 대로 인터페이스를 **여기서 고쳤다.**
+  `save()`가 dict를 그대로 넘기지 않고 `ITEM_COLUMNS`로 명시 필터링한다.
+  덕분에 수집기가 자기 `save()`에서 쓸 여분 키를 item에 매달 수 있다.
+- `.env.example` 추가. 실제 `.env`는 gitignore 대상.
+- 검증: fixture로 `save()`를 두 번 호출 →
+  `items` 2 → 2 (**신규 0**), `item_metrics` 4 → 8 (**새 행 추가**). 테스트 14개 통과.
+  (검증 2회차의 중복 metric 행은 이후 삭제)
+
+**예측과 달랐던 점 / 배운 것**
+- ① **`INSERT OR IGNORE`는 `lastrowid`를 주지 않는다.** 이미 있는 저장소는 삽입이
+  무시되므로 방금 넣은 행의 id를 알 수 없다. 그런데 metrics를 쓰려면 `item_id`가
+  **반드시** 필요하다. → `external_id`로 되찾는 SELECT가 한 번 더 필요하다.
+  T3에서 "저장 구조가 다르다"고 남겨둔 부분이 정확히 이 지점이었다.
+- ② **자격증명을 `__init__`에서 읽으면 `parse()`를 테스트할 수 없다.**
+  처음에 `self.token = os.environ["GITHUB_TOKEN"]`을 생성자에 넣었더니, 토큰 없는
+  환경에서는 **객체 생성 자체가 실패**해서 순수 함수인 `parse()`조차 못 돌린다.
+  토큰 읽기를 I/O 단계인 `fetch()`로 내렸다. fetch/parse 분리의 이유가 "테스트
+  편의"만이 아니라 **자격증명 경계**이기도 하다는 것을 여기서 알았다.
+- ③ GitHub Search API는 core의 시간당 5000회와 **별도 예산**을 쓴다(인증 시 분당 30회).
+  그래서 로그에 남기는 `X-RateLimit-Remaining`은 search 예산의 잔량이다.
+
+**면접에서 이렇게 설명한다**
+- **items와 item_metrics의 재실행 동작이 왜 달라야 하는가** — 두 테이블이 답하는
+  질문이 다르다. `items`는 "이 저장소가 무엇인가"이고 이건 변하지 않으므로 두 번째
+  수집에서 새 행이 생기면 그게 버그다. `item_metrics`는 "이 저장소가 그 시점에 star가
+  몇 개였나"이고 이건 매 수집마다 **다른 사실**이므로 새 행이 안 생기면 그게 버그다.
+  즉 `items`는 멱등해야 하고 `item_metrics`는 멱등하면 안 된다.
+  같은 실행에서 한 테이블은 `INSERT OR IGNORE`, 다른 테이블은 그냥 `INSERT`인 이유다.
+- 이걸 하나의 테이블로 합쳤다면 star 수를 UPDATE해야 하고, 그 순간 어제 값이 사라져
+  Phase 3의 트렌드 계산이 불가능해진다.

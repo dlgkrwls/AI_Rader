@@ -9,6 +9,11 @@ from src.database.connection import get_connection
 
 logger = logging.getLogger(__name__)
 
+ITEM_COLUMNS = (
+    "source", "source_type", "external_id", "title", "summary", "url",
+    "authors", "tags", "published_at", "collected_at", "raw_json",
+)
+
 INSERT_ITEM = """
     INSERT OR IGNORE INTO items
         (source, source_type, external_id, title, summary, url,
@@ -46,7 +51,10 @@ class BaseCollector:
     def save(self, conn, items: list[dict]) -> int:
         """Insert items, skipping ones already stored. Returns the new row count."""
         before = conn.total_changes
-        conn.executemany(INSERT_ITEM, items)
+        # Only the item columns: collectors may hang extra keys (metrics) off a
+        # row for their own save() to pick up afterwards.
+        rows = [{c: item[c] for c in ITEM_COLUMNS} for item in items]
+        conn.executemany(INSERT_ITEM, rows)
         conn.commit()
         return conn.total_changes - before
 

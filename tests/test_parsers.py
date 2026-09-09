@@ -5,26 +5,24 @@ import unittest
 from pathlib import Path
 
 from src.collectors.arxiv import ArxivCollector, _squash
+from src.collectors.base import ITEM_COLUMNS
+from src.collectors.github import GithubCollector
 
-FIXTURE = Path(__file__).parent / "fixtures" / "arxiv_sample.xml"
-
-ITEM_COLUMNS = {
-    "source", "source_type", "external_id", "title", "summary", "url",
-    "authors", "tags", "published_at", "collected_at", "raw_json",
-}
+FIXTURES = Path(__file__).parent / "fixtures"
 
 
 class ArxivParseTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.items = ArxivCollector().parse(FIXTURE.read_text(encoding="utf-8"))
+        raw = (FIXTURES / "arxiv_sample.xml").read_text(encoding="utf-8")
+        cls.items = ArxivCollector().parse(raw)
 
     def test_parses_every_entry(self):
         self.assertEqual(len(self.items), 2)
 
     def test_supplies_every_item_column(self):
         for item in self.items:
-            self.assertEqual(set(item), ITEM_COLUMNS)
+            self.assertEqual(set(item), set(ITEM_COLUMNS))
 
     def test_not_null_columns_are_filled(self):
         for item in self.items:
@@ -44,6 +42,40 @@ class ArxivParseTest(unittest.TestCase):
         for item in self.items:
             self.assertIsInstance(json.loads(item["authors"]), list)
             self.assertIsInstance(json.loads(item["tags"]), list)
+
+
+class GithubParseTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        # Constructing the collector must not need a token, or this cannot run.
+        raw = json.loads((FIXTURES / "github_sample.json").read_text(encoding="utf-8"))
+        cls.items = GithubCollector().parse(raw)
+
+    def test_parses_every_repo(self):
+        self.assertEqual(len(self.items), 2)
+
+    def test_carries_item_columns_plus_metrics(self):
+        for item in self.items:
+            self.assertEqual(set(item), set(ITEM_COLUMNS) | {"metrics"})
+
+    def test_external_id_is_owner_slash_repo(self):
+        self.assertEqual(self.items[0]["external_id"], "m87-labs/moondream")
+
+    def test_metrics_hold_stars_and_forks(self):
+        metrics = self.items[0]["metrics"]
+        self.assertEqual(set(metrics), {"stars", "forks"})
+        for value in metrics.values():
+            self.assertIsInstance(value, int)
+
+    def test_changing_numbers_stay_out_of_the_item_columns(self):
+        # stars/forks belong in item_metrics. Only raw_json may echo them.
+        for item in self.items:
+            columns = {c: item[c] for c in ITEM_COLUMNS if c != "raw_json"}
+            self.assertNotIn(str(item["metrics"]["stars"]), json.dumps(columns))
+
+    def test_raw_json_round_trips(self):
+        raw = json.loads(self.items[0]["raw_json"])
+        self.assertEqual(raw["full_name"], "m87-labs/moondream")
 
 
 class SquashTest(unittest.TestCase):
