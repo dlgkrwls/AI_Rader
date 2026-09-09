@@ -12,10 +12,32 @@
 ## 현재 상태
 
 - Phase: **1 (수집 파이프라인)**
-- 현재 태스크: **T6 — 빅테크 블로그 수집기** (T1~T5, T8 완료 / T7은 collect.py 골격만)
+- 완료: **T1 T2 T3 T4 T5 T8** (+ T5 후속: HF 정렬을 downloads로 교체)
+- 남음: **T6 (블로그 수집기)**, **T7 (오케스트레이션 마무리)**, **T9 (대시보드)**
+- 다음 태스크: **T6.** 예측은 `docs/DECISIONS.md`에 이미 적혀 있다.
 - 상세: `docs/PHASE1.md`
 
 > 태스크가 끝날 때마다 이 섹션을 갱신할 것.
+
+### 지금 돌아가고 있는 것
+
+- **스케줄러 등록 완료.** 매일 08:00에 `scripts/collect.py`가 자동 실행된다
+  (작업 이름 `AI_Radar_Collect`, 등록 방법은 `docs/SCHEDULER.md`).
+  T8의 남은 확인 하나: **다음 날 아침 `logs/collect_YYYY-MM-DD.log`가 생겼는지.**
+- 실행 환경은 conda **`radar`** (Python 3.11.16).
+  절대 경로: `C:\Users\user\anaconda3\envs\radar\python.exe`
+  base 아나콘다(3.12)에는 `feedparser`가 없어 수집기가 안 돈다.
+- 테스트: `python -m unittest discover -s tests` (pytest 안 씀 — 표준 라이브러리 우선)
+- DB 누적 686건 (arxiv 339 / github 148 / huggingface 199), `item_metrics` 2,204행.
+  `data/radar.db`는 gitignore 대상이라 **이 PC에만 있다.** 따로 백업할 것.
+- `.env`에 `GITHUB_TOKEN` 있음 (gitignore 대상). HF와 arXiv는 인증 불필요.
+
+### T7에 남은 일
+
+`scripts/collect.py`는 T8을 먼저 하기 위해 **최소한으로만** 만들어 둔 상태다 (56줄).
+예외 격리와 파일 로깅은 이미 들어 있고, 남은 것은 요약 출력(소스별 건수 · 소요 시간)과
+수집기 생성 자체가 실패했을 때 `collection_runs`에 기록을 남기는 것이다.
+**경로는 바꾸지 말 것** — 스케줄러 작업이 이 경로를 하드코딩하고 있다.
 
 ---
 
@@ -30,6 +52,13 @@
    - 사용자에게 **무엇을 왜 그렇게 했는지 3~5줄로 설명**
 4. **diff가 150줄을 넘을 것 같으면 먼저 알린다.** 태스크를 쪼갤지 사용자가 판단한다.
 5. 코드를 쓰기 전에 접근 방식을 2~3줄로 먼저 말한다. 긴 설계 문서는 쓰지 않는다.
+6. **`docs/DECISIONS.md`는 사용자와 에이전트가 함께 편집한다.** 에이전트는 append만
+   하지만, 사용자의 편집기 버퍼가 낡은 상태로 저장되면 에이전트의 기록이 지워진다.
+   실제로 두 번 위험했다. 그래서:
+   - 사용자는 예측을 쓰기 **전에** 편집기에서 파일을 새로 읽는다
+     (VS Code: `File > Revert File`).
+   - 에이전트는 append 전에 파일이 온전한지 확인하고, 사용자가 붙여넣은 내용이
+     디스크와 다르면 **덮어쓰지 말고 차이를 먼저 알린다.**
 
 ---
 
