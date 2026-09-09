@@ -93,13 +93,19 @@ class HuggingFaceParseTest(unittest.TestCase):
             self.assertEqual(set(item), set(ITEM_COLUMNS) | {"metrics"})
 
     def test_external_id_is_the_model_path(self):
-        self.assertEqual(self.items[0]["external_id"], "WaveMatrix/YOLO11")
+        self.assertEqual(
+            self.items[0]["external_id"], "microsoft/table-transformer-structure-recognition"
+        )
 
     def test_owner_becomes_the_author(self):
-        self.assertEqual(json.loads(self.items[0]["authors"]), ["WaveMatrix"])
+        self.assertEqual(json.loads(self.items[0]["authors"]), ["microsoft"])
 
     def test_metrics_hold_downloads_and_likes(self):
-        self.assertEqual(set(self.items[0]["metrics"]), {"downloads", "likes"})
+        metrics = self.items[0]["metrics"]
+        self.assertEqual(set(metrics), {"downloads", "likes"})
+        # The fixture comes from the downloads sort, which is what we collect:
+        # a stable cohort with real numbers, not freshly uploaded zeros.
+        self.assertGreater(metrics["downloads"], 0)
 
     def test_summary_is_empty_because_the_list_endpoint_has_none(self):
         for item in self.items:

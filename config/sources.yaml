@@ -30,7 +30,10 @@ huggingface:
     - image-segmentation
     - depth-estimation
     - image-text-to-text
-  sort: lastModified
+  # downloads, not lastModified: sorting by recency returns a different set of
+  # models every day (20 results span ~5 hours), so each model would get a
+  # single metric sample and item_metrics could never form a trend line.
+  sort: downloads
   max_results_per_task: 20
 
 blog:
