@@ -21,16 +21,28 @@
 
 ### 지금 돌아가고 있는 것
 
-- **스케줄러 등록 완료.** 매일 08:00에 `scripts/collect.py`가 자동 실행된다
+- **스케줄러 정상 동작 중.** 매일 08:00에 `scripts/collect.py`가 자동 실행된다
   (작업 이름 `AI_Radar_Collect`, 등록 방법은 `docs/SCHEDULER.md`).
-  T8의 남은 확인 하나: **다음 날 아침 `logs/collect_YYYY-MM-DD.log`가 생겼는지.**
+  2026-09-10 08:00 자동 실행 확인 완료 (`LastTaskResult=0`, 놓친 실행 0회).
+  **T8 완료 조건 2개 모두 충족.** 이후로는 매일 `logs/collect_YYYY-MM-DD.log`만
+  가끔 확인하면 된다. Phase 1 완료 판정은 "7일 연속 성공"이므로 2026-09-16경 판정 가능.
 - 실행 환경은 conda **`radar`** (Python 3.11.16).
   절대 경로: `C:\Users\user\anaconda3\envs\radar\python.exe`
   base 아나콘다(3.12)에는 `feedparser`가 없어 수집기가 안 돈다.
 - 테스트: `python -m unittest discover -s tests` (pytest 안 씀 — 표준 라이브러리 우선)
-- DB 누적 686건 (arxiv 339 / github 148 / huggingface 199), `item_metrics` 2,204행.
+- DB 누적 686건 (arxiv 339 / github 148 / huggingface 199), `item_metrics` 2,704행 (2026-09-10 기준).
   `data/radar.db`는 gitignore 대상이라 **이 PC에만 있다.** 따로 백업할 것.
 - `.env`에 `GITHUB_TOKEN` 있음 (gitignore 대상). HF와 arXiv는 인증 불필요.
+
+### 알려진 특성 2가지 (T9 전에 볼 것)
+
+- **DB의 시각은 전부 UTC다.** 08:00(KST) 실행이 `collection_runs.started_at`에는
+  전날 23:00Z로 들어간다. 버그가 아니라 `datetime.now(timezone.utc)`의 정상 동작.
+  **T9 대시보드에서 날짜별로 묶을 때 반드시 걸린다** — 로컬 시각으로 변환하거나
+  UTC임을 화면에 밝힐 것. (`item_metrics`는 매일 같은 시각이라 트렌드 계산은 무관)
+- **08:00 실행은 arXiv 당일 공지보다 2시간 빠르다.** arXiv는 01:00 UTC(=10:00 KST)에
+  신규 논문을 공지하므로, 그날 배치를 다음 날 아침에 가져온다. 데이터가 새지는 않지만
+  하루 지연이 생긴다. **11:00 KST로 옮기면 당일 수집.** 아직 안 바꿨다 — 사용자 판단.
 
 ### T7에 남은 일
 
